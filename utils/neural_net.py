@@ -6,6 +6,56 @@
 
 import torch
 
+def torch_repeat(in_tens, repeats, axis):
+    # Repeat FM in the 2 last dimensions, to upsample back to the normal resolution space.
+    # in_tens: [batch size, num of FMs, H, W]. Input/output of conv layers.
+    # repeat_per_dim: [repetitions axis H, repetitions axis W]
+    # returns: Tensor of size: [batch size, num of FMs, H*repeat[0], W*repeat[1] ]
+    
+    # NOTE: Exactly the same API and behaviour as numpy.repeat(...)
+    # Because torch.repeat is similar to numpy.tile(...), not what we want.
+    # See: https://stackoverflow.com/questions/35227224/torch-repeat-tensor-like-numpy-repeat
+    tens = in_tens
+    assert axis>0
+    # Combine dimension to previous
+    shape_flat = list(in_tens.shape)
+    shape_flat[axis-1] = in_tens.shape[axis-1]*in_tens.shape[axis]
+    shape_flat[axis] = 1
+    tens_flat = tens.reshape( shape_flat )
+    # Tile
+    repeat_per_dim = [1]*len(in_tens.shape)
+    repeat_per_dim[axis] = repeats
+    tens_rep_flat = tens_flat.repeat( repeat_per_dim ) # This is what numpy.tile(...) does.
+    # Reshape to what it should be.
+    shape_result = list(in_tens.shape)
+    shape_result[axis] = in_tens.shape[axis]*repeats
+    tens_rep = tens_rep_flat.reshape( shape_result )
+    return tens_rep
+
+def torch_repeat_2_last_dims(in_tens, repeat_per_dim):
+    # Repeat FM in the 2 last dimensions, to upsample back to the normal resolution space.
+    # in_tens: [batch size, num of FMs, H, W]. Input/output of conv layers.
+    # repeat_per_dim: [repetitions axis H, repetitions axis W]
+    # returns: Tensor of size: [batch size, num of FMs, H*repeat[0], W*repeat[1] ]
+    
+    # NOTE: Similar behaviour to numpy.repeat(...)
+    # Because torch.repeat is similar to numpy.tile(...), not what we want.
+    # See: https://stackoverflow.com/questions/35227224/torch-repeat-tensor-like-numpy-repeat
+    tens = in_tens
+    
+    tens_shape = in_tens.shape
+    tens_resh = tens.reshape( [tens_shape[0], tens_shape[1]*tens_shape[2], 1, tens_shape[3]] )
+    tens_rep = tens_resh.repeat( 1, 1, repeat_per_dim[0], 1 )
+    tens = tens_rep.reshape( [tens_shape[0], tens_shape[1], tens_shape[2]*repeat_per_dim[0], tens_shape[3]] )
+    
+    tens_shape = tens.shape
+    tens_resh = tens.reshape( [tens_shape[0], tens_shape[1], tens_shape[2]*tens_shape[3], 1] )
+    tens_rep = tens_resh.repeat( [1, 1, 1, repeat_per_dim[1]] )
+    tens = tens_rep.reshape( [tens_shape[0], tens_shape[1], tens_shape[2], tens_shape[3]*repeat_per_dim[1]] )
+    return tens
+
+
+
 def grad_of_xentropy_wrt_input_to_softmax_pytorch(y_pred,
                                                   y_real,
                                                   batch_size,

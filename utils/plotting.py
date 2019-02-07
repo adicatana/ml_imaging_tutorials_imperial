@@ -7,25 +7,24 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from IPython import display
 plt.rcParams['axes.labelsize'] = 14
 plt.rcParams['xtick.labelsize'] = 12
 plt.rcParams['ytick.labelsize'] = 12
 
 
-
-
-def plot_image(image, interpol="nearest"):
+def plot_image(image, interpol="nearest", cmap="gray", vminmax=[None,None], figsize=None):
     # image: np.array of one of the following shapes:
     #       grayscale image:    (height, width)
     #       grayscale image:    (height, width, 1)
     #       rgb image:          (height, width, 3)
     print("Plotting image of shape: ", image.shape)
-    plt.figure() #(figsize=(n_imgs_per_row*0.5, n_rows*0.5)) # size (width, height), in inches.
+    plt.figure(figsize=figsize) # (figsize=(n_imgs_per_row*0.5, n_rows*0.5)) # size (width, height), in inches.
     if len(image.shape) == 2:
-        fig = plt.imshow(image, cmap="gray", interpolation=interpol) # imshow: (w,h) or (w,h,3)
+        fig = plt.imshow(image, cmap=cmap, interpolation=interpol, vmin=vminmax[0], vmax=vminmax[1]) # imshow: (w,h) or (w,h,3)
         plt.colorbar(fig)
     elif len(image.shape) == 3 and image.shape[2] == 1:
-        fig = plt.imshow(image[:,:,0], cmap="gray", interpolation=interpol) # imshow: (w,h) or (w,h,3)
+        fig = plt.imshow(image[:,:,0], cmap=cmap, interpolation=interpol, vmin=v_minmax[0], vmax=vminmax[1]) # imshow: (w,h) or (w,h,3)
         plt.colorbar(fig)
     elif len(image.shape) == 3 and image.shape[2] == 3 :
         _ = plt.imshow(image, interpolation=interpol)
@@ -33,13 +32,34 @@ def plot_image(image, interpol="nearest"):
         raise Error("Wrong shape of given image for plotting.")
 
 
-def plot_grid_of_images(imgs, n_imgs_per_row=10, interpol="nearest"):
+def display_image_dynamically(image, interpol="nearest", cmap="gray", vminmax=[None,None], figsize=None):
+    # image: np.array of one of the following shapes:
+    #       grayscale image:    (height, width)
+    #       grayscale image:    (height, width, 1)
+    
+    print("Plotting image of shape: ", image.shape)
+    plt.figure(figsize=figsize) # (figsize=(n_imgs_per_row*0.5, n_rows*0.5)) # size (width, height), in inches.
+    if len(image.shape) == 2:
+        fig = plt.imshow(image, cmap=cmap, interpolation=interpol, vmin=vminmax[0], vmax=vminmax[1]) # imshow: (w,h) or (w,h,3)
+        plt.colorbar(fig)
+    elif len(image.shape) == 3 and image.shape[2] == 1:
+        fig = plt.imshow(image[:,:,0], cmap=cmap, interpolation=interpol, vmin=v_minmax[0], vmax=vminmax[1]) # imshow: (w,h) or (w,h,3)
+        plt.colorbar(fig)
+    elif len(image.shape) == 3 and image.shape[2] == 3 :
+        _ = plt.imshow(image, interpolation=interpol)
+    else:
+        raise Error("Wrong shape of given image for plotting.")
+        
+    #display.clear_output(wait=True)
+    display.display(plt.gcf())
+    
+def plot_grid_of_images(imgs, n_imgs_per_row=10, interpol="nearest", cmap="gray", vminmax=[None,None]):
     # imgs: numpy array of one of the following shapes:
     #       grayscales images:  (number-of-images, height, width)
     #       grayscales images:  (number-of-images, height, width, 1)
     #       color images:       (number-of-images, height, width, 3)
-    n_rows = 1 + imgs.shape[0] // (n_imgs_per_row + 1)
-    
+    n_rows = imgs.shape[0]//n_imgs_per_row + 1*int(imgs.shape[0]%n_imgs_per_row > 0)
+    print("n_rows=",n_rows)
     # Append empty images if the last row is not complete
     n_empty_imgs = n_rows * n_imgs_per_row - imgs.shape[0]
     imgs_to_plot = np.concatenate( [imgs, np.zeros((n_empty_imgs, imgs.shape[1], imgs.shape[2]))], axis=0)
@@ -52,7 +72,7 @@ def plot_grid_of_images(imgs, n_imgs_per_row=10, interpol="nearest"):
     # draw all row-images in one image
     collage_of_images = np.concatenate(row_images, axis=0) # array.shape: (height X n_imgs_per_row, width X n_imgs_per_row)
     
-    plot_image(collage_of_images, interpol=interpol)
+    plot_image(collage_of_images, interpol=interpol, cmap=cmap, vminmax=[None,None])
 
 
     
